@@ -4,8 +4,16 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  // Store the current theme mode (light or dark)
+  ThemeMode _themeMode = ThemeMode.light;
 
   @override
   Widget build(BuildContext context) {
@@ -19,8 +27,16 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
       ),
+      themeMode: _themeMode, // Set the themeMode based on the value of _themeMode
       home: const TaskPage(),
     );
+  }
+
+  // Method to toggle theme mode
+  void toggleTheme() {
+    setState(() {
+      _themeMode = (_themeMode == ThemeMode.light) ? ThemeMode.dark : ThemeMode.light;
+    });
   }
 }
 
@@ -44,12 +60,8 @@ class _TaskPageState extends State<TaskPage> {
           IconButton(
             icon: const Icon(Icons.dark_mode),
             onPressed: () {
-              setState(() {
-                ThemeMode currentTheme = Theme.of(context).brightness == Brightness.dark
-                    ? ThemeMode.light
-                    : ThemeMode.dark;
-                MyApp().setTheme(currentTheme);
-              });
+              // Access the toggleTheme method to switch themes
+              (_MyAppState()).toggleTheme();
             },
           ),
         ],
