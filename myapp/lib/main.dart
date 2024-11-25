@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
-      child: const MyApp(),
+      child: ChangeNotifierProvider(
+        create: (context) => TaskProvider(),
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -23,19 +27,64 @@ class ThemeProvider with ChangeNotifier {
   }
 }
 
+class TaskProvider with ChangeNotifier {
+  List<String> _tasks = [];
+
+  List<String> get tasks => _tasks;
+
+  TaskProvider() {
+    _loadTasks();
+  }
+
+  // Method to load tasks from shared_preferences
+  void _loadTasks() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? savedTasks = prefs.getStringList('tasks');
+    if (savedTasks != null) {
+      _tasks = savedTasks;
+      notifyListeners();
+    }
+  }
+
+  // Method to add task
+  void addTask(String task) async {
+    _tasks.add(task);
+    notifyListeners();
+    _saveTasks();
+  }
+
+  // Method to remove task
+  void removeTask(int index) async {
+    _tasks.removeAt(index);
+    notifyListeners();
+    _saveTasks();
+  }
+
+  // Method to toggle task completion
+  void toggleTaskCompletion(int index) {
+    _tasks[index] = _tasks[index] + ' - Completed';
+    notifyListeners();
+    _saveTasks();
+  }
+
+  // Method to save tasks to shared_preferences
+  void _saveTasks() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('tasks', _tasks);
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Access the theme mode from the provider
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       title: 'Task Manager',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
@@ -43,112 +92,6 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: themeProvider.themeMode, // Set the themeMode based on the provider
       home: const TaskPage(),
-    );
-  }
-}
-
-class TaskPage extends StatefulWidget {
-  const TaskPage({super.key});
-
-  @override
-  _TaskPageState createState() => _TaskPageState();
-}
-
-class _TaskPageState extends State<TaskPage> {
-  List<String> tasks = [];
-  TextEditingController taskController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Task Manager'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.dark_mode),
-            onPressed: () {
-              // Access the theme provider and toggle theme
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: tasks.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    elevation: 4,
-                    child: ListTile(
-                      title: Text(tasks[index]),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.check, color: Colors.green),
-                        onPressed: () {
-                          setState(() {
-                            tasks.removeAt(index);
-                          });
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(
-                'Completed ${tasks.length} tasks today!',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addTaskDialog,
-        tooltip: 'Add Task',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  _addTaskDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Task'),
-          content: TextField(
-            controller: taskController,
-            decoration: const InputDecoration(hintText: 'Enter your task'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (taskController.text.isNotEmpty) {
-                  setState(() {
-                    tasks.add(taskController.text);
-                  });
-                }
-                Navigator.of(context).pop();
-                taskController.clear();
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
