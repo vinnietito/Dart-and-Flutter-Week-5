@@ -1,22 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatefulWidget {
+class ThemeProvider with ChangeNotifier {
+  // Store the current theme mode
+  ThemeMode _themeMode = ThemeMode.light;
+
+  ThemeMode get themeMode => _themeMode;
+
+  // Method to toggle theme mode
+  void toggleTheme() {
+    _themeMode = (_themeMode == ThemeMode.light) ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners(); // Notify listeners to rebuild with the new theme
+  }
+}
+
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  // Store the current theme mode (light or dark)
-  ThemeMode _themeMode = ThemeMode.light;
-
-  @override
   Widget build(BuildContext context) {
+    // Access the theme mode from the provider
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Task Manager',
       theme: ThemeData(
@@ -27,16 +41,9 @@ class _MyAppState extends State<MyApp> {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
       ),
-      themeMode: _themeMode, // Set the themeMode based on the value of _themeMode
+      themeMode: themeProvider.themeMode, // Set the themeMode based on the provider
       home: const TaskPage(),
     );
-  }
-
-  // Method to toggle theme mode
-  void toggleTheme() {
-    setState(() {
-      _themeMode = (_themeMode == ThemeMode.light) ? ThemeMode.dark : ThemeMode.light;
-    });
   }
 }
 
@@ -60,8 +67,8 @@ class _TaskPageState extends State<TaskPage> {
           IconButton(
             icon: const Icon(Icons.dark_mode),
             onPressed: () {
-              // Access the toggleTheme method to switch themes
-              (_MyAppState()).toggleTheme();
+              // Access the theme provider and toggle theme
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
             },
           ),
         ],
