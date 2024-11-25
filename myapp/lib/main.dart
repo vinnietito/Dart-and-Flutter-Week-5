@@ -10,64 +10,126 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Task Manager',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-        textTheme: const TextTheme(
-          headlineMedium: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blueAccent),  // Updated
-          bodyLarge: TextStyle(fontSize: 16, color: Colors.black),  // Updated
-        ),
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        brightness: Brightness.light,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+      ),
+      home: const TaskPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class TaskPage extends StatefulWidget {
+  const TaskPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TaskPageState createState() => _TaskPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class _TaskPageState extends State<TaskPage> {
+  List<String> tasks = [];
+  TextEditingController taskController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: const Text('Task Manager'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dark_mode),
+            onPressed: () {
+              setState(() {
+                ThemeMode currentTheme = Theme.of(context).brightness == Brightness.dark
+                    ? ThemeMode.light
+                    : ThemeMode.dark;
+                MyApp().setTheme(currentTheme);
+              });
+            },
+          ),
+        ],
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    elevation: 4,
+                    child: ListTile(
+                      title: Text(tasks[index]),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.check, color: Colors.green),
+                        onPressed: () {
+                          setState(() {
+                            tasks.removeAt(index);
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium, // Updated
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Completed ${tasks.length} tasks today!',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _addTaskDialog,
+        tooltip: 'Add Task',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  _addTaskDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add New Task'),
+          content: TextField(
+            controller: taskController,
+            decoration: const InputDecoration(hintText: 'Enter your task'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (taskController.text.isNotEmpty) {
+                  setState(() {
+                    tasks.add(taskController.text);
+                  });
+                }
+                Navigator.of(context).pop();
+                taskController.clear();
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
